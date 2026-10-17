@@ -31,7 +31,7 @@ This pulls the latest changes, clones `server` and `web` over SSH (the URLs in `
 | Command | Description |
 | --- | --- |
 | `pnpm run setup` | Pull the latest changes, update submodules, and install dependencies (safe to rerun) |
-| `pnpm run pull:submodules` | Pull the latest `main` of `server` and `web` |
+| `pnpm run git:pull` | Pull the latest `main` of `server` and `web` |
 | `pnpm run develop` | Start the database, server, and web in development mode |
 | `pnpm run build` | Build the server and web |
 
@@ -66,7 +66,7 @@ git submodule update --init --recursive --merge
 To move `server` and `web` to their latest `main` instead of the commits recorded here:
 
 ```bash
-pnpm run pull:submodules
+pnpm run git:pull
 git add server web
 git commit -m "⬆️ Update submodules"
 ```
