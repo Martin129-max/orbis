@@ -1,0 +1,23 @@
+#!/bin/sh
+[ -n "$ORBIS_SUBMODULE_SYNC" ] && exit 0
+
+message=$(git log -1 --format=%B)
+synced=""
+
+for path in $(git config --file .gitmodules --get-regexp '\.path$' | awk '{print $2}'); do
+  (
+    unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
+    [ -z "$(git -C "$path" status --porcelain)" ] && exit 2
+    git -C "$path" add -A && printf '%s\n' "$message" | git -C "$path" commit -q -F -
+  )
+  case $? in
+    0) git add "$path" && synced="$synced $path" ;;
+    2) ;;
+    *) echo "post-commit: failed to commit submodule $path" >&2; exit 1 ;;
+  esac
+done
+
+if [ -n "$synced" ]; then
+  ORBIS_SUBMODULE_SYNC=1 git commit -q --amend --no-edit --no-verify
+  echo "Committed submodules:$synced"
+fi

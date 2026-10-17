@@ -4,7 +4,8 @@
   "packageManager": "pnpm@12.4.2",
   "scripts": {
     "build": "turbo run build",
-    "develop": "turbo run develop"
+    "develop": "turbo run develop",
+    "prepare": "git config core.hooksPath .githooks && git config push.recurseSubmodules on-demand"
   },
   "devDependencies": {
     "turbo": "2.11.7"

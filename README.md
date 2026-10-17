@@ -45,9 +45,14 @@ pnpm --filter orbis-server run db:setup
 | `pnpm run build` | Build the server and web |
 
 ## Updating Submodules
-Commit and push changes inside `server` or `web` first, then record the new commits in this repository:
+`pnpm install` enables the hooks in `.githooks` and sets `push.recurseSubmodules=on-demand`.
+
+Committing in this repository also commits any changes inside `server` or `web` with the same message, and `git push` pushes those submodule commits first:
 
 ```bash
-git add server web
-git commit
+git add .
+git commit -m "✨ Add feature"
+git push
 ```
+
+If only submodules changed, use `git commit --allow-empty -m "..."`.
