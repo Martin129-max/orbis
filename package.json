@@ -1,0 +1,12 @@
+{
+  "name": "orbis",
+  "private": true,
+  "packageManager": "pnpm@12.4.2",
+  "scripts": {
+    "build": "turbo run build",
+    "develop": "turbo run develop"
+  },
+  "devDependencies": {
+    "turbo": "2.11.7"
+  }
+}
