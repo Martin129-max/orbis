@@ -5,7 +5,9 @@
   "scripts": {
     "build": "turbo run build",
     "develop": "turbo run develop",
-    "prepare": "git config core.hooksPath .githooks && git config push.recurseSubmodules on-demand"
+    "prepare": "git config core.hooksPath .githooks && git config push.recurseSubmodules on-demand",
+    "setup": "bash ./setup.sh",
+    "pull:submodules": "git submodule foreach 'git checkout -q main && git pull --ff-only'"
   },
   "devDependencies": {
     "turbo": "2.11.7"

@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+set -e
+
+cd "$(dirname "$0")"
+
+SUBMODULE_BRANCH="main"
+DB_CONTAINER="orbis_server_db"
+
+echo "🚀 Setting up Orbis..."
+
+if git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
+  echo "⬇️ Pulling latest changes..."
+  git pull --ff-only
+fi
+
+echo "🔗 Syncing submodule URLs from .gitmodules..."
+git submodule sync --recursive
+
+echo "📥 Updating submodules..."
+git submodule update --init --recursive --merge
+
+for path in $(git config --file .gitmodules --get-regexp '\.path$' | awk '{print $2}'); do
+  recorded=$(git rev-parse "HEAD:$path")
+  if ! git -C "$path" symbolic-ref -q HEAD >/dev/null; then
+    git -C "$path" checkout -q "$SUBMODULE_BRANCH"
+  fi
+  git -C "$path" merge -q --ff-only "$recorded"
+  echo "✅ $path is on $(git -C "$path" branch --show-current) at $(git -C "$path" rev-parse --short HEAD)"
+done
+
+echo "📦 Installing dependencies..."
+pnpm install
+
+copy_env() {
+  if [ ! -f "$2" ]; then
+    cp "$1" "$2"
+    echo "✅ Created $2 from $1"
+  fi
+  if grep -q "=XXXX" "$2"; then
+    echo "⚠️ Replace the XXXX values in $2"
+  fi
+}
+
+copy_env server/example.env server/.env
+copy_env web/example.env web/.env.local
+
+if docker info >/dev/null 2>&1; then
+  if ! docker container inspect "$DB_CONTAINER" >/dev/null 2>&1; then
+    echo "🗄️ Creating database container..."
+    pnpm --filter orbis-server run db:setup
+  fi
+else
+  echo "⚠️ Docker is not running. Start it, then run: pnpm run setup"
+fi
+
+echo "⚙️ Generating Prisma client..."
+pnpm --filter orbis-server run prisma:generate
+
+echo "🎉 Setup complete. Run: pnpm run develop"

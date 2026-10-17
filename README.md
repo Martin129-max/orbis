@@ -10,37 +10,28 @@ The monorepo of Orbis, managed with [Turborepo](https://turborepo.dev) and pnpm 
 `server` and `web` are Git submodules.
 
 ## Getting Started
-1. **Clone with submodules**:
+1. **Clone over SSH**:
 
 ```bash
-git clone --recurse-submodules https://github.com/PolsarCode/orbis.git
+git clone git@github.com:PolsarCode/orbis.git
+cd orbis
 ```
 
-If already cloned:
+2. **Run the setup**:
 
 ```bash
-git submodule update --init --recursive
+pnpm run setup
 ```
 
-2. **Install dependencies**:
+This pulls the latest changes, clones `server` and `web` over SSH (the URLs in `.gitmodules`), checks them out on `main`, installs dependencies, enables the git hooks, creates `server/.env` and `web/.env.local` from `example.env`, creates the database container, and generates the Prisma client.
 
-```bash
-pnpm install
-```
-
-3. **Set up environment variables**:
-   - `server`: copy `example.env` to `.env` (see [server/DATABASE.md](server/DATABASE.md))
-   - `web`: copy `example.env` to `.env.local` and set `NEXT_PUBLIC_API_URL=http://localhost:4000`
-
-4. **Set up the database** (first time only):
-
-```bash
-pnpm --filter orbis-server run db:setup
-```
+3. **Fill in the environment variables**: replace the `XXXX` values in `server/.env` (see [server/DATABASE.md](server/DATABASE.md)) and set `NEXT_PUBLIC_API_URL=http://localhost:4000` in `web/.env.local`.
 
 ## Scripts
 | Command | Description |
 | --- | --- |
+| `pnpm run setup` | Pull the latest changes, update submodules, and install dependencies (safe to rerun) |
+| `pnpm run pull:submodules` | Pull the latest `main` of `server` and `web` |
 | `pnpm run develop` | Start the database, server, and web in development mode |
 | `pnpm run build` | Build the server and web |
 
@@ -56,3 +47,26 @@ git push
 ```
 
 If only submodules changed, use `git commit --allow-empty -m "..."`.
+
+## Pulling Changes
+Run the setup again to pull this repository and the submodules together:
+
+```bash
+pnpm run setup
+```
+
+To do it manually, keeping `server` and `web` on `main`:
+
+```bash
+git pull
+git submodule sync --recursive
+git submodule update --init --recursive --merge
+```
+
+To move `server` and `web` to their latest `main` instead of the commits recorded here:
+
+```bash
+pnpm run pull:submodules
+git add server web
+git commit -m "⬆️ Update submodules"
+```
