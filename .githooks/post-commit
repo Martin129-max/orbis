@@ -2,12 +2,20 @@
 [ -n "$ORBIS_SUBMODULE_SYNC" ] && exit 0
 
 message=$(git log -1 --format=%B)
+branch=$(git symbolic-ref -q --short HEAD)
 synced=""
 
 for path in $(git config --file .gitmodules --get-regexp '\.path$' | awk '{print $2}'); do
   (
     unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
     [ -z "$(git -C "$path" status --porcelain)" ] && exit 2
+    if [ -n "$branch" ] && [ "$(git -C "$path" branch --show-current)" != "$branch" ]; then
+      if git -C "$path" show-ref -q --verify "refs/heads/$branch"; then
+        git -C "$path" switch -q "$branch"
+      else
+        git -C "$path" switch -q -c "$branch"
+      fi || exit 1
+    fi
     git -C "$path" add -A && printf '%s\n' "$message" | git -C "$path" commit -q -F -
   )
   case $? in

@@ -1,0 +1,32 @@
+#!/bin/sh
+remote="$1"
+submodules=$(git config --file .gitmodules --get-regexp '\.path$' | awk '{print $2}')
+
+is_zero() {
+  case $1 in *[!0]*) return 1 ;; esac
+}
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case $remote_ref in refs/heads/*) ;; *) continue ;; esac
+  is_zero "$local_sha" && continue
+  branch=${remote_ref#refs/heads/}
+
+  base=""
+  if ! is_zero "$remote_sha" && git cat-file -e "$remote_sha" 2>/dev/null; then
+    base=$remote_sha
+  else
+    for ref in "refs/remotes/$remote/HEAD" "refs/remotes/$remote/main"; do
+      base=$(git merge-base "$local_sha" "$ref" 2>/dev/null) && break
+    done
+  fi
+
+  for path in $submodules; do
+    commit=$(git rev-parse -q --verify "$local_sha:$path") || continue
+    [ -n "$base" ] && [ "$(git rev-parse -q --verify "$base:$path")" = "$commit" ] && continue
+    echo "Pushing submodule $path to $branch"
+    (
+      unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
+      git -C "$path" push -q origin "$commit:refs/heads/$branch"
+    ) || { echo "pre-push: failed to push submodule $path to $branch" >&2; exit 1; }
+  done
+done

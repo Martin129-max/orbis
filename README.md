@@ -23,7 +23,7 @@ cd orbis
 pnpm run setup
 ```
 
-This pulls the latest changes, clones `server` and `web` over SSH (the URLs in `.gitmodules`), checks them out on `main`, installs dependencies, enables the git hooks, creates `server/.env` and `web/.env.local` from `example.env`, creates the database container, and generates the Prisma client.
+This pulls the latest changes, clones `server` and `web` over SSH (the URLs in `.gitmodules`), checks them out on the same branch as this repository (or `main` if that branch doesn't exist in the submodule), installs dependencies, enables the git hooks, creates `server/.env` and `web/.env.local` from `example.env`, creates the database container, and generates the Prisma client.
 
 3. **Fill in the environment variables**: replace the `XXXX` values in `server/.env` (see [server/DATABASE.md](server/DATABASE.md)) and set `NEXT_PUBLIC_API_URL=http://localhost:4000` in `web/.env.local`.
 
@@ -36,9 +36,9 @@ This pulls the latest changes, clones `server` and `web` over SSH (the URLs in `
 | `pnpm run build` | Build the server and web |
 
 ## Updating Submodules
-`pnpm install` enables the hooks in `.githooks` and sets `push.recurseSubmodules=on-demand`.
+`pnpm install` enables the hooks in `.githooks`.
 
-Committing in this repository also commits any changes inside `server` or `web` with the same message, and `git push` pushes those submodule commits first:
+Committing in this repository also commits any changes inside `server` or `web` with the same message, on a branch with the same name as this repository's branch. `git push` then pushes the changed submodules to that same branch name before pushing this repository:
 
 ```bash
 git add .
@@ -55,7 +55,7 @@ Run the setup again to pull this repository and the submodules together:
 pnpm run setup
 ```
 
-To do it manually, keeping `server` and `web` on `main`:
+To do it manually:
 
 ```bash
 git pull

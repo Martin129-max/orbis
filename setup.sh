@@ -4,7 +4,7 @@ set -e
 
 cd "$(dirname "$0")"
 
-SUBMODULE_BRANCH="main"
+DEFAULT_BRANCH="main"
 DB_CONTAINER="orbis_server_db"
 
 echo "🚀 Setting up Orbis..."
@@ -18,15 +18,24 @@ echo "🔗 Syncing submodule URLs from .gitmodules..."
 git submodule sync --recursive
 
 echo "📥 Updating submodules..."
-git submodule update --init --recursive --merge
+git submodule update --init --recursive
+
+parent_branch=$(git branch --show-current)
 
 for path in $(git config --file .gitmodules --get-regexp '\.path$' | awk '{print $2}'); do
   recorded=$(git rev-parse "HEAD:$path")
-  if ! git -C "$path" symbolic-ref -q HEAD >/dev/null; then
-    git -C "$path" checkout -q "$SUBMODULE_BRANCH"
+  branch=$DEFAULT_BRANCH
+  if [ -n "$parent_branch" ] && git -C "$path" show-ref -q --verify "refs/remotes/origin/$parent_branch"; then
+    branch=$parent_branch
   fi
-  git -C "$path" merge -q --ff-only "$recorded"
-  echo "✅ $path is on $(git -C "$path" branch --show-current) at $(git -C "$path" rev-parse --short HEAD)"
+  git -C "$path" checkout -q "$branch"
+  if git -C "$path" merge-base --is-ancestor HEAD "$recorded"; then
+    git -C "$path" merge -q --ff-only "$recorded"
+    echo "✅ $path is on $branch at $(git -C "$path" rev-parse --short HEAD)"
+  else
+    git -C "$path" checkout -q --detach "$recorded"
+    echo "✅ $path is at $(git -C "$path" rev-parse --short HEAD) ($branch is ahead, so it is detached)"
+  fi
 done
 
 echo "📦 Installing dependencies..."
