@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+
+set -e
+
+cd "$(dirname "$0")"
+
+fail() {
+  echo "❌ $1" >&2
+  exit 1
+}
+
+label() {
+  printf '%s' "$1" | awk '{print toupper(substr($0, 1, 1)) substr($0, 2)}'
+}
+
+if [ -n "$(git status --porcelain --ignore-submodules=all)" ]; then
+  fail "This repository has uncommitted changes. Commit or stash them first."
+fi
+
+branch=$(git branch --show-current)
+[ -n "$branch" ] || fail "This repository is not on a branch."
+
+submodules=$(git config --file .gitmodules --get-regexp '\.path$' | awk '{print $2}')
+changed=""
+subjects=""
+body=""
+
+for path in $submodules; do
+  if [ -n "$(git -C "$path" status --porcelain)" ]; then
+    fail "$path has uncommitted changes. Commit them inside $path first."
+  fi
+
+  recorded=$(git rev-parse "HEAD:$path")
+  current=$(git -C "$path" rev-parse HEAD)
+  [ "$recorded" = "$current" ] && continue
+
+  [ -n "$(git -C "$path" branch --show-current)" ] || fail "$path is not on a branch."
+  git -C "$path" merge-base --is-ancestor "$recorded" "$current" ||
+    fail "$path is not ahead of the commit recorded here."
+
+  commits=$(git -C "$path" log --reverse --no-merges --format=%s "$recorded..$current")
+  changed="$changed $path"
+  subjects="$subjects$commits"$'\n'
+  body="$body$(label "$path"):"$'\n'"$(printf '%s\n' "$commits" | sed 's/^/- /')"$'\n\n'
+done
+
+[ -n "$changed" ] || fail "Nothing to release: server and web have no new commits."
+
+if printf '%s' "$subjects" | grep -qE '^(💥|:boom:)'; then
+  bump=major
+elif printf '%s' "$subjects" | grep -qE '^(✨|:sparkles:)'; then
+  bump=minor
+else
+  bump=patch
+fi
+
+version=$(node -e '
+  const [major, minor, patch] = require("./package.json").version.split(".").map(Number);
+  const next = { major: [major + 1, 0, 0], minor: [major, minor + 1, 0], patch: [major, minor, patch + 1] };
+  console.log(next[process.argv[1]].join("."));
+' "$bump")
+tag="v$version"
+
+git rev-parse -q --verify "refs/tags/$tag" >/dev/null && fail "Tag $tag already exists."
+
+echo "🔖 Releasing $tag ($bump)"
+
+for path in $changed; do
+  echo "⬆️ Pushing $path..."
+  git -C "$path" push -u origin HEAD
+done
+
+node -e '
+  const fs = require("fs");
+  const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+  pkg.version = process.argv[1];
+  fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
+' "$version"
+
+message=$(printf '%s\n\n%s' "$tag" "$body")
+
+git add package.json $changed
+printf '%s\n' "$message" | git commit -q --cleanup=whitespace -F -
+printf '%s\n' "$message" | git tag -a "$tag" --cleanup=whitespace -F -
+
+echo "⬆️ Pushing $tag..."
+git push -u origin HEAD
+git push origin "refs/tags/$tag"
+
+echo "✅ Released $tag"

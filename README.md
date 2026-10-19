@@ -31,24 +31,27 @@ This pulls the latest changes, clones `server` and `web` over SSH (the URLs in `
 | Command | Description |
 | --- | --- |
 | `pnpm run setup` | Pull the latest changes, update submodules, and install dependencies (safe to rerun) |
+| `pnpm run release` | Bump the version, commit the new `server`/`web` commits, tag, and push |
 | `pnpm run git:pull` | Pull the latest `main` of `server` and `web` |
 | `pnpm run develop` | Start the database, server, and web in development mode |
 | `pnpm run build` | Build the server and web |
 
-## Updating Submodules
-`pnpm install` enables the hooks in `.githooks`.
-
-Committing in this repository also commits any changes inside `server` or `web` with the same message, on a branch with the same name as this repository's branch. `git push` then pushes the changed submodules to that same branch name before pushing this repository:
+## Releasing
+Commit your changes inside `server` and/or `web` first, then run from this repository:
 
 ```bash
-git add .
-git commit -m "✨ Add feature"
-git push
+pnpm run release
 ```
 
-If only submodules changed, use `git commit --allow-empty -m "..."`.
+This:
+1. Bumps `version` in `package.json` based on the Gitmoji of the new `server`/`web` commits: `💥` → major, `✨` → minor, anything else → patch.
+2. Pushes `server` and `web`.
+3. Commits the new submodule commits here, with the version as the title (for example `v0.2.0`) and the new commits listed in the description.
+4. Tags that commit (for example `v0.2.0`) and pushes the commit and tag.
 
-The commit in this repository gets `(Web)`, `(Server)`, or `(Web/Server)` appended to its subject when it changes those submodules. The submodule commits keep the original message.
+It stops without changing anything if this repository or a submodule has uncommitted changes, or if `server` and `web` have no new commits.
+
+`pnpm install` enables the hooks in `.githooks`: `git push` here also pushes the submodule commits to a branch with the same name.
 
 ## Pulling Changes
 Run the setup again to pull this repository and the submodules together:
