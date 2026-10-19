@@ -48,6 +48,8 @@ git push
 
 If only submodules changed, use `git commit --allow-empty -m "..."`.
 
+The commit in this repository gets `(Web)`, `(Server)`, or `(Web/Server)` appended to its subject when it changes those submodules. The submodule commits keep the original message.
+
 ## Pulling Changes
 Run the setup again to pull this repository and the submodules together:
 

@@ -3,9 +3,10 @@
 
 message=$(git log -1 --format=%B)
 branch=$(git symbolic-ref -q --short HEAD)
+submodules=$(git config --file .gitmodules --get-regexp '\.path$' | awk '{print $2}')
 synced=""
 
-for path in $(git config --file .gitmodules --get-regexp '\.path$' | awk '{print $2}'); do
+for path in $submodules; do
   (
     unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
     [ -z "$(git -C "$path" status --porcelain)" ] && exit 2
@@ -16,7 +17,7 @@ for path in $(git config --file .gitmodules --get-regexp '\.path$' | awk '{print
         git -C "$path" switch -q -c "$branch"
       fi || exit 1
     fi
-    git -C "$path" add -A && printf '%s\n' "$message" | git -C "$path" commit -q -F -
+    git -C "$path" add -A && printf '%s\n' "$message" | git -C "$path" commit -q --cleanup=whitespace -F -
   )
   case $? in
     0) git add "$path" && synced="$synced $path" ;;
@@ -25,7 +26,28 @@ for path in $(git config --file .gitmodules --get-regexp '\.path$' | awk '{print
   esac
 done
 
-if [ -n "$synced" ]; then
-  ORBIS_SUBMODULE_SYNC=1 git commit -q --amend --no-edit --no-verify
-  echo "Committed submodules:$synced"
+changed=" $synced $(git diff-tree --root --no-commit-id --name-only -r HEAD -- $submodules | tr '\n' ' ') "
+case $changed in *" web "*) web=1 ;; *) web="" ;; esac
+case $changed in *" server "*) server=1 ;; *) server="" ;; esac
+
+if [ -n "$web" ] && [ -n "$server" ]; then
+  label=" (Web/Server)"
+elif [ -n "$web" ]; then
+  label=" (Web)"
+elif [ -n "$server" ]; then
+  label=" (Server)"
+else
+  label=""
 fi
+
+subject=$(printf '%s\n' "$message" | head -n 1)
+body=$(printf '%s\n' "$message" | tail -n +2)
+case $subject in *"$label") label="" ;; esac
+
+if [ -n "$synced" ] || [ -n "$label" ]; then
+  printf '%s%s\n%s\n' "$subject" "$label" "$body" |
+    ORBIS_SUBMODULE_SYNC=1 git commit -q --amend --no-verify --cleanup=whitespace -F -
+fi
+
+[ -n "$synced" ] && echo "Committed submodules:$synced"
+exit 0
