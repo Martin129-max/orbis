@@ -37,19 +37,19 @@ This pulls the latest changes, clones `server` and `web` over SSH (the URLs in `
 | `pnpm run build` | Build the server and web |
 
 ## Releasing
-Commit your changes inside `server` and/or `web` first, then run from this repository:
+Commit your changes inside `server` and/or `web` first, then run from this repository (changes in this repository don't need to be committed):
 
 ```bash
 pnpm run release
 ```
 
 This:
-1. Bumps `version` in `package.json` based on the Gitmoji of the new `server`/`web` commits: `💥` → major, `✨` → minor, anything else → patch.
+1. Bumps `version` in `package.json` based on the Gitmoji of the new `server`/`web` commits: `💥` → major, `✨` → minor, anything else (or only changes in this repository) → patch.
 2. Pushes `server` and `web`.
-3. Commits the new submodule commits here, with the version as the title (for example `v0.2.0`) and the new commits listed in the description.
+3. Commits everything here, including the new submodule commits and any uncommitted changes in this repository, with the version as the title (for example `v0.2.0`). The description lists the new `server`/`web` commits and the changed files in this repository.
 4. Tags that commit (for example `v0.2.0`) and pushes the commit and tag.
 
-It stops without changing anything if this repository or a submodule has uncommitted changes, or if `server` and `web` have no new commits.
+It stops without changing anything if a submodule has uncommitted changes, or if nothing changed here, in `server`, or in `web`.
 
 `pnpm install` enables the hooks in `.githooks`: `git push` here also pushes the submodule commits to a branch with the same name.
 

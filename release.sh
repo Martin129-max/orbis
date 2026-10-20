@@ -13,10 +13,6 @@ label() {
   printf '%s' "$1" | awk '{print toupper(substr($0, 1, 1)) substr($0, 2)}'
 }
 
-if [ -n "$(git status --porcelain --ignore-submodules=all)" ]; then
-  fail "This repository has uncommitted changes. Commit or stash them first."
-fi
-
 branch=$(git branch --show-current)
 [ -n "$branch" ] || fail "This repository is not on a branch."
 
@@ -44,7 +40,12 @@ for path in $submodules; do
   body="$body$(label "$path"):"$'\n'"$(printf '%s\n' "$commits" | sed 's/^/- /')"$'\n\n'
 done
 
-[ -n "$changed" ] || fail "Nothing to release: server and web have no new commits."
+files=$(git status --porcelain --ignore-submodules=all | cut -c4-)
+if [ -n "$files" ]; then
+  body="${body}Orbis:"$'\n'"$(printf '%s\n' "$files" | sed 's/^/- /')"$'\n'
+fi
+
+[ -n "$changed" ] || [ -n "$files" ] || fail "Nothing to release: nothing changed here, in server, or in web."
 
 if printf '%s' "$subjects" | grep -qE '^(💥|:boom:)'; then
   bump=major
@@ -79,7 +80,7 @@ node -e '
 
 message=$(printf '%s\n\n%s' "$tag" "$body")
 
-git add package.json $changed
+git add -A
 printf '%s\n' "$message" | git commit -q --cleanup=whitespace -F -
 printf '%s\n' "$message" | git tag -a "$tag" --cleanup=whitespace -F -
 
