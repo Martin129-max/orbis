@@ -160,7 +160,7 @@ Skip this if `ssh -T git@github.com` already greets you by your username.
    pnpm --filter orbis-server exec prisma migrate deploy
    ```
 
-6. Add the test accounts (optional, recommended):
+6. Add the test data (optional, recommended):
 
    ```bash
    pnpm --filter orbis-server run prisma:seed
@@ -171,7 +171,9 @@ Skip this if `ssh -T git@github.com` already greets you by your username.
    | `bos@eriko.ph` | `boseriko` |
    | `twis@wua.ph` | `twiswua` |
 
-   Seeding **deletes all users and communities** in your local database before creating these accounts, so only run it when you want a clean slate.
+   It also creates two communities, **BosEriko** and **TwisWua**, owned by `bos@eriko.ph`, with both accounts as members.
+
+   Seeding **deletes all users and communities** in your local database before creating this data, so only run it when you want a clean slate.
 
 7. Start everything:
 
@@ -217,7 +219,7 @@ Run these from the `orbis` folder:
 | Apply migrations (after cloning or pulling) | `pnpm --filter orbis-server exec prisma migrate deploy` |
 | Create a migration after editing `server/prisma/schema.prisma` | `pnpm --filter orbis-server run prisma:migrate <name>` |
 | Regenerate the Prisma client | `pnpm --filter orbis-server run prisma:generate` |
-| Reset to the test accounts | `pnpm --filter orbis-server run prisma:seed` |
+| Reset to the test accounts and communities | `pnpm --filter orbis-server run prisma:seed` |
 | Browse and edit data in the browser | `pnpm --filter orbis-server run prisma:studio` |
 
 `prisma:migrate` creates the migration file, applies it to your database, and regenerates the client. Commit the new folder under `server/prisma/migrations` with your change.
