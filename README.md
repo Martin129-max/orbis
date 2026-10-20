@@ -10,6 +10,8 @@ The monorepo of Orbis, managed with [Turborepo](https://turborepo.dev) and pnpm 
 `server` and `web` are Git submodules.
 
 ## Getting Started
+For step-by-step instructions for macOS, Ubuntu, and Windows, including prerequisites, see [SETUP.md](SETUP.md).
+
 1. **Clone over SSH**:
 
 ```bash
