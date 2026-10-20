@@ -160,13 +160,76 @@ Skip this if `ssh -T git@github.com` already greets you by your username.
    pnpm --filter orbis-server exec prisma migrate deploy
    ```
 
-6. Start everything:
+6. Add the test accounts (optional, recommended):
+
+   ```bash
+   pnpm --filter orbis-server run prisma:seed
+   ```
+
+   | Email | Password |
+   | --- | --- |
+   | `bos@eriko.ph` | `boseriko` |
+   | `twis@wua.ph` | `twiswua` |
+
+   Seeding **deletes all users and communities** in your local database before creating these accounts, so only run it when you want a clean slate.
+
+7. Start everything:
 
    ```bash
    pnpm run develop
    ```
 
-   This starts the database, the API, and the web app. Open http://localhost:3000 and create an account.
+   This starts the database, the API, and the web app. Open http://localhost:3000 and log in with a test account, or create your own.
+
+## Database
+
+PostgreSQL runs in a Docker container that `pnpm run setup` creates for you. These credentials are for local development only.
+
+| Setting | Value |
+| --- | --- |
+| Container | `orbis_server_db` |
+| Image | `postgres:16` |
+| Host and port | `localhost:5434` (not the default 5432, to avoid clashing with a PostgreSQL already on your machine) |
+| User | `postgres` |
+| Password | `YourStrongPass123` |
+| Database | `orbis_server_db` |
+
+### Container
+
+Run these from the `orbis` folder:
+
+| Task | Command |
+| --- | --- |
+| Create the container (first time only) | `pnpm --filter orbis-server run db:setup` |
+| Start | `pnpm --filter orbis-server run db:start` |
+| Stop | `pnpm --filter orbis-server run db:stop` |
+| Restart | `pnpm --filter orbis-server run db:restart` |
+| Check if it's running | `pnpm --filter orbis-server run db:status` |
+| Follow its logs | `pnpm --filter orbis-server run db:logs` |
+| Delete the container and its data | `pnpm --filter orbis-server run db:remove` |
+
+`pnpm run develop` restarts the database for you, so you rarely need these day to day. The database can take a few seconds to accept connections after it starts.
+
+### Migrations and Data
+
+| Task | Command |
+| --- | --- |
+| Apply migrations (after cloning or pulling) | `pnpm --filter orbis-server exec prisma migrate deploy` |
+| Create a migration after editing `server/prisma/schema.prisma` | `pnpm --filter orbis-server run prisma:migrate <name>` |
+| Regenerate the Prisma client | `pnpm --filter orbis-server run prisma:generate` |
+| Reset to the test accounts | `pnpm --filter orbis-server run prisma:seed` |
+| Browse and edit data in the browser | `pnpm --filter orbis-server run prisma:studio` |
+
+`prisma:migrate` creates the migration file, applies it to your database, and regenerates the client. Commit the new folder under `server/prisma/migrations` with your change.
+
+### Start Over With an Empty Database
+
+```bash
+pnpm --filter orbis-server run db:remove
+pnpm --filter orbis-server run db:setup
+pnpm --filter orbis-server exec prisma migrate deploy
+pnpm --filter orbis-server run prisma:seed
+```
 
 ## Day-to-Day
 
@@ -177,7 +240,7 @@ Skip this if `ssh -T git@github.com` already greets you by your username.
 | Apply new database migrations after pulling | `pnpm --filter orbis-server exec prisma migrate deploy` |
 | Stop the database | `pnpm --filter orbis-server run db:stop` |
 
-See [README.md](README.md) for releasing and the other scripts.
+See [README.md](README.md) for releasing and the other scripts, and [Database](#database) for the database commands.
 
 ## Troubleshooting
 
