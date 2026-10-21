@@ -6,6 +6,7 @@ cd "$(dirname "$0")"
 
 DEFAULT_BRANCH="main"
 DB_CONTAINER="orbis_server_db"
+STORAGE_CONTAINER="orbis_server_storage"
 
 echo "🚀 Setting up Orbis..."
 
@@ -58,6 +59,10 @@ if docker info >/dev/null 2>&1; then
   if ! docker container inspect "$DB_CONTAINER" >/dev/null 2>&1; then
     echo "🗄️ Creating database container..."
     pnpm --filter orbis-server run db:setup
+  fi
+  if ! docker container inspect "$STORAGE_CONTAINER" >/dev/null 2>&1; then
+    echo "🪣 Creating storage container..."
+    pnpm --filter orbis-server run storage:setup
   fi
 else
   echo "⚠️ Docker is not running. Start it, then run: pnpm run setup"

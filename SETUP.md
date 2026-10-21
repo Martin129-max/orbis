@@ -9,6 +9,7 @@ When it's running:
 | Web | http://localhost:3000 |
 | API | http://localhost:4000 |
 | PostgreSQL (Docker) | `localhost:5434` |
+| Image storage (Docker) | http://localhost:9100 (console at http://localhost:9101/rustfs/console/) |
 
 ## Prerequisites
 
@@ -17,7 +18,7 @@ When it's running:
 | Git | any recent | Cloning the repositories |
 | Node.js | 22 LTS | Running the server and web |
 | pnpm | 12.4.2 | Installing dependencies and running scripts |
-| Docker | any recent | Running PostgreSQL |
+| Docker | any recent | Running PostgreSQL and image storage |
 | SSH key on GitHub | | `server` and `web` are cloned over SSH |
 
 You also need access to the `PolsarCode/orbis`, `PolsarCode/orbis.server`, and `PolsarCode/orbis.web` repositories on GitHub.
@@ -133,7 +134,7 @@ Skip this if `ssh -T git@github.com` already greets you by your username.
    pnpm run setup
    ```
 
-   This clones `server` and `web`, installs dependencies, enables the git hooks, creates `server/.env` and `web/.env.local`, creates the PostgreSQL container, and generates the Prisma client. It warns about the `XXXX` values you fill in next.
+   This clones `server` and `web`, installs dependencies, enables the git hooks, creates `server/.env` and `web/.env.local`, creates the PostgreSQL and storage containers, and generates the Prisma client. It warns about the `XXXX` values you fill in next.
 
 3. Fill in `server/.env`:
 
@@ -141,6 +142,8 @@ Skip this if `ssh -T git@github.com` already greets you by your username.
    JWT_SECRET=<a long random string>
    DATABASE_URL=postgresql://postgres:YourStrongPass123@localhost:5434/orbis_server_db
    ```
+
+   The `STORAGE_*` values already match the local storage container, so leave them as they are.
 
    Generate a `JWT_SECRET` with:
 
@@ -181,7 +184,7 @@ Skip this if `ssh -T git@github.com` already greets you by your username.
    pnpm run develop
    ```
 
-   This starts the database, the API, and the web app. Open http://localhost:3000 and log in with a test account, or create your own.
+   This starts the database, the image storage, the API, and the web app. Open http://localhost:3000 and log in with a test account, or create your own.
 
 ## Database
 
@@ -234,6 +237,55 @@ pnpm --filter orbis-server exec prisma migrate deploy
 pnpm --filter orbis-server run prisma:seed
 ```
 
+## Image Storage
+
+Uploaded images go to S3-compatible storage. Locally that's [RustFS](https://github.com/rustfs/rustfs) in a Docker container that `pnpm run setup` creates for you, with a public bucket named `orbis`. In production it's Cloudflare R2 (see [Production Image Storage](#production-image-storage)). The server talks to both the same way; only `server/.env` changes. These credentials are for local development only.
+
+| Setting | Value |
+| --- | --- |
+| Container | `orbis_server_storage` |
+| Image | `rustfs/rustfs:1.0.1` |
+| API | http://localhost:9100 |
+| Console (browse uploaded files) | http://localhost:9101/rustfs/console/ |
+| Access key | `orbis` |
+| Secret key | `YourStrongPass123` |
+| Bucket | `orbis` |
+
+Run these from the `orbis` folder:
+
+| Task | Command |
+| --- | --- |
+| Create the container and bucket (first time only) | `pnpm --filter orbis-server run storage:setup` |
+| Start | `pnpm --filter orbis-server run storage:start` |
+| Stop | `pnpm --filter orbis-server run storage:stop` |
+| Restart | `pnpm --filter orbis-server run storage:restart` |
+| Check if it's running | `pnpm --filter orbis-server run storage:status` |
+| Follow its logs | `pnpm --filter orbis-server run storage:logs` |
+| Create the bucket again (if you deleted it) | `pnpm --filter orbis-server run storage:bucket` |
+| Delete the container and every uploaded file | `pnpm --filter orbis-server run storage:remove` |
+
+`pnpm run develop` restarts the storage for you, along with the database.
+
+### Production Image Storage
+
+Production uses a Cloudflare R2 bucket. It's free up to 10 GB, and R2 doesn't charge when people download images.
+
+1. In the [Cloudflare dashboard](https://dash.cloudflare.com), go to **R2 Object Storage** and create a bucket (for example `orbis`).
+2. In the bucket's **Settings**, under **Custom Domains**, connect a domain you manage on Cloudflare (for example `cdn.yourdomain.com`). This makes the images public and serves them through Cloudflare's CDN. For a quick test without a domain, enable the **r2.dev** public URL instead. It's rate-limited, so don't use it for real traffic.
+3. Back on the R2 overview, open **Manage API tokens** and create a token with **Object Read & Write** permission, limited to that bucket. Copy the **Access Key ID**, **Secret Access Key**, and the **S3 endpoint** (`https://<account-id>.r2.cloudflarestorage.com`).
+4. Set these in the production server's environment:
+
+   ```env
+   STORAGE_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+   STORAGE_REGION=auto
+   STORAGE_ACCESS_KEY_ID=<access key id>
+   STORAGE_SECRET_ACCESS_KEY=<secret access key>
+   STORAGE_BUCKET=orbis
+   STORAGE_PUBLIC_URL=https://cdn.yourdomain.com
+   ```
+
+   `STORAGE_PUBLIC_URL` is where browsers load images from, with no trailing slash. Don't run `storage:bucket` against R2; the bucket and its public access are set up in the dashboard.
+
 ## Day-to-Day
 
 | Task | Command |
@@ -253,7 +305,9 @@ See [README.md](README.md) for releasing and the other scripts, and [Database](#
 
 **`permission denied while trying to connect to the Docker daemon socket` on Ubuntu.** Your user isn't in the `docker` group yet. Run `sudo usermod -aG docker $USER`, then log out and back in.
 
-**`Bind for 0.0.0.0:5434 failed: port is already allocated`, or port 3000/4000 is in use.** Another process is using the port. Stop it, or find it with `lsof -i :5434` (macOS/Ubuntu/WSL).
+**`Bind for 0.0.0.0:5434 failed: port is already allocated`, or port 3000/4000 is in use.** Another process is using the port. Stop it, or find it with `lsof -i :5434` (macOS/Ubuntu/WSL). The same applies to the storage ports 9100 and 9101.
+
+**`pnpm run develop` fails with `No such container: orbis_server_storage`.** Your setup predates image storage. Add the `STORAGE_*` lines from `server/example.env` to `server/.env`, then run `pnpm --filter orbis-server run storage:setup`.
 
 **`/usr/bin/env: 'bash\r': No such file or directory` on Windows.** The scripts were checked out with Windows line endings. Run `git config --global core.autocrlf input`, delete the project folder, and clone again inside WSL.
 
