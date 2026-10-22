@@ -220,7 +220,7 @@ Run these from the `orbis` folder:
 | Task | Command |
 | --- | --- |
 | Apply migrations (after cloning or pulling) | `pnpm --filter orbis-server exec prisma migrate deploy` |
-| Create a migration after editing `server/prisma/schema.prisma` | `pnpm --filter orbis-server run prisma:migrate <name>` |
+| Create a migration after editing the schema in `server/prisma/schema/` | `pnpm --filter orbis-server run prisma:migrate <name>` |
 | Regenerate the Prisma client | `pnpm --filter orbis-server run prisma:generate` |
 | Reset to the test accounts and communities | `pnpm --filter orbis-server run prisma:seed` |
 | Wipe the database, reapply every migration, and reseed (when a migration can't apply to your existing data) | `pnpm --filter orbis-server run prisma:reset` |
