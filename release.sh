@@ -88,4 +88,9 @@ echo "⬆️ Pushing $tag..."
 git push -u origin HEAD
 git push origin "refs/tags/$tag"
 
+for path in server web; do
+  echo "🚀 Deploying $path..."
+  (cd "$path" && pnpm run deploy)
+done
+
 echo "✅ Released $tag"
