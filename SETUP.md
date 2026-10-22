@@ -143,7 +143,7 @@ Skip this if `ssh -T git@github.com` already greets you by your username.
    DATABASE_URL=postgresql://postgres:YourStrongPass123@localhost:5434/orbis_server_db
    ```
 
-   The `STORAGE_*` values already match the local storage container, so leave them as they are.
+   The storage values (`AWS_*`, `BUCKET_NAME`, `STORAGE_PUBLIC_URL`) already match the local storage container, so leave them as they are.
 
    Generate a `JWT_SECRET` with:
 
@@ -276,11 +276,11 @@ Production uses a Cloudflare R2 bucket. It's free up to 10 GB, and R2 doesn't ch
 4. Set these in the production server's environment:
 
    ```env
-   STORAGE_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
-   STORAGE_REGION=auto
-   STORAGE_ACCESS_KEY_ID=<access key id>
-   STORAGE_SECRET_ACCESS_KEY=<secret access key>
-   STORAGE_BUCKET=orbis
+   AWS_ENDPOINT_URL_S3=https://<account-id>.r2.cloudflarestorage.com
+   AWS_REGION=auto
+   AWS_ACCESS_KEY_ID=<access key id>
+   AWS_SECRET_ACCESS_KEY=<secret access key>
+   BUCKET_NAME=orbis
    STORAGE_PUBLIC_URL=https://cdn.yourdomain.com
    ```
 
@@ -307,7 +307,7 @@ See [README.md](README.md) for releasing and the other scripts, and [Database](#
 
 **`Bind for 0.0.0.0:5434 failed: port is already allocated`, or port 3000/4000 is in use.** Another process is using the port. Stop it, or find it with `lsof -i :5434` (macOS/Ubuntu/WSL). The same applies to the storage ports 9100 and 9101.
 
-**`pnpm run develop` fails with `No such container: orbis_server_storage`.** Your setup predates image storage. Add the `STORAGE_*` lines from `server/example.env` to `server/.env`, then run `pnpm --filter orbis-server run storage:setup`.
+**`pnpm run develop` fails with `No such container: orbis_server_storage`.** Your setup predates image storage. Add the storage lines (`AWS_*`, `BUCKET_NAME`, `STORAGE_PUBLIC_URL`) from `server/example.env` to `server/.env`, then run `pnpm --filter orbis-server run storage:setup`.
 
 **`/usr/bin/env: 'bash\r': No such file or directory` on Windows.** The scripts were checked out with Windows line endings. Run `git config --global core.autocrlf input`, delete the project folder, and clone again inside WSL.
 
