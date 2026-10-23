@@ -291,8 +291,8 @@ Production uses a Cloudflare R2 bucket. It's free up to 10 GB, and R2 doesn't ch
 | Task | Command |
 | --- | --- |
 | Start developing | `pnpm run develop` |
-| Pull the latest changes and update `server`/`web` | `pnpm run setup` |
-| Apply new database migrations after pulling | `pnpm --filter orbis-server exec prisma migrate deploy` |
+| Pull the latest changes, install dependencies, reset/migrate/seed the local database, and check environment values | `pnpm run pull` |
+| Apply new database migrations while preserving existing data | `pnpm --filter orbis-server exec prisma migrate deploy` |
 | Stop the database | `pnpm --filter orbis-server run db:stop` |
 
 See [README.md](README.md) for releasing and the other scripts, and [Database](#database) for the database commands.

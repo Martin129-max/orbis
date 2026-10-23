@@ -1,6 +1,6 @@
 {
   "name": "orbis",
-  "version": "0.38.0",
+  "version": "0.39.0",
   "private": true,
   "packageManager": "pnpm@12.4.2",
   "scripts": {
@@ -8,7 +8,7 @@
     "develop": "turbo run develop",
     "prepare": "git config core.hooksPath .githooks && git config push.recurseSubmodules no",
     "setup": "bash ./setup.sh",
-    "git:pull": "git submodule foreach 'git checkout -q main && git pull --ff-only'",
+    "pull": "bash ./pull.sh",
     "release": "bash ./release.sh"
   },
   "devDependencies": {
