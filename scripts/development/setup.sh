@@ -54,6 +54,7 @@ copy_env() {
 
 copy_env server/example.env server/.env
 copy_env web/example.env web/.env.local
+copy_env mobile/example.env mobile/.env.local
 
 if docker info >/dev/null 2>&1; then
   if ! docker container inspect "$DB_CONTAINER" >/dev/null 2>&1; then
@@ -71,4 +72,4 @@ fi
 echo "⚙️ Generating Prisma client..."
 pnpm --filter orbis-server run prisma:generate
 
-echo "🎉 Setup complete. Run: pnpm run develop"
+echo "🎉 Setup complete. Run: pnpm run develop:web or pnpm run develop:mobile"

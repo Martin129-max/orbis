@@ -1,12 +1,15 @@
 packages:
   - server
   - web
+  - mobile
 
 allowBuilds:
   '@nestjs/core': true
   '@prisma/engines': true
   bcrypt: true
+  dtrace-provider: false
   esbuild: true
   prisma: true
+  protobufjs: false
   sharp: false
   unrs-resolver: false

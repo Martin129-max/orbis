@@ -48,7 +48,7 @@ pnpm --filter orbis-server run prisma:generate
 echo "🧱 Resetting the local database, reapplying migrations, and seeding..."
 pnpm --filter orbis-server run prisma:reset
 
-echo "🎉 Updated and reseeded. Run pnpm run develop to start working."
+echo "🎉 Updated and reseeded. Run pnpm run develop:web or pnpm run develop:mobile to start working."
 echo ""
 echo "🔑 Local development accounts — http://localhost:3000/login"
 echo "   Admin:       admin@user.com (or admin) / 123456"

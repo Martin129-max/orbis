@@ -4,3 +4,6 @@
 [submodule "web"]
 	path = web
 	url = git@github.com:PolsarCode/orbis.web.git
+[submodule "mobile"]
+	path = mobile
+	url = git@github.com:PolsarCode/orbis.mobile.git

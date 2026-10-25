@@ -26,15 +26,20 @@ for path in $submodules; do
     fail "$path has uncommitted changes. Commit them inside $path first."
   fi
 
-  recorded=$(git rev-parse "HEAD:$path")
+  recorded=$(git rev-parse -q --verify "HEAD:$path" || true)
   current=$(git -C "$path" rev-parse HEAD)
   [ "$recorded" = "$current" ] && continue
 
   [ -n "$(git -C "$path" branch --show-current)" ] || fail "$path is not on a branch."
-  git -C "$path" merge-base --is-ancestor "$recorded" "$current" ||
-    fail "$path is not ahead of the commit recorded here."
+  if [ -n "$recorded" ]; then
+    git -C "$path" merge-base --is-ancestor "$recorded" "$current" ||
+      fail "$path is not ahead of the commit recorded here."
+    range="$recorded..$current"
+  else
+    range="$current"
+  fi
 
-  commits=$(git -C "$path" log --reverse --no-merges --format=%s "$recorded..$current")
+  commits=$(git -C "$path" log --reverse --no-merges --format=%s "$range")
   changed="$changed $path"
   subjects="$subjects$commits"$'\n'
   body="$body$(label "$path"):"$'\n'"$(printf '%s\n' "$commits" | sed 's/^/- /')"$'\n\n'
@@ -45,7 +50,7 @@ if [ -n "$files" ]; then
   body="${body}Orbis:"$'\n'"$(printf '%s\n' "$files" | sed 's/^/- /')"$'\n'
 fi
 
-[ -n "$changed" ] || [ -n "$files" ] || fail "Nothing to release: nothing changed here, in server, or in web."
+[ -n "$changed" ] || [ -n "$files" ] || fail "Nothing to release: nothing changed here, in server, in web, or in mobile."
 
 if printf '%s' "$subjects" | grep -qE '^(💥|:boom:)'; then
   bump=major
@@ -88,7 +93,7 @@ echo "⬆️ Pushing $tag..."
 git push -u origin HEAD
 git push origin "refs/tags/$tag"
 
-for path in server web; do
+for path in server web mobile; do
   echo "🚀 Deploying $path..."
   (cd "$path" && pnpm run deploy)
 done

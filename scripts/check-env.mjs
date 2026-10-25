@@ -20,6 +20,7 @@ let warned = false;
 for (const [example, actual] of [
   ["server/example.env", "server/.env"],
   ["web/example.env", "web/.env.local"],
+  ["mobile/example.env", "mobile/.env.local"],
 ]) {
   if (!existsSync(`${root}${example}`)) {
     console.warn(`⚠️ Cannot check ${actual}: ${example} is missing.`);
@@ -29,6 +30,7 @@ for (const [example, actual] of [
   const expected = readValues(`${root}${example}`);
   const values = readValues(`${root}${actual}`);
   const missing = [...expected.keys()].filter((key) => {
+    if (!expected.get(key)) return false;
     const value = values.get(key);
     return !value?.trim() || value.trim() === "XXXX";
   });
@@ -37,4 +39,4 @@ for (const [example, actual] of [
     warned = true;
   }
 }
-if (!warned) console.log("✅ Web and server environment values are filled in.");
+if (!warned) console.log("✅ Server, web, and mobile environment values are filled in.");

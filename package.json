@@ -1,11 +1,13 @@
 {
   "name": "orbis",
-  "version": "0.46.1",
+  "version": "0.46.2",
   "private": true,
   "packageManager": "pnpm@12.4.2",
   "scripts": {
     "build": "turbo run build",
-    "develop": "turbo run develop",
+    "develop:web": "turbo run develop --filter=orbis-server --filter=orbis-web",
+    "develop:mobile": "turbo run develop --filter=orbis-server --filter=orbis-mobile --ui=tui",
+    "develop:all": "turbo run develop --filter=orbis-server --filter=orbis-web --filter=orbis-mobile --ui=tui",
     "prepare": "git config core.hooksPath .githooks && git config push.recurseSubmodules no",
     "setup": "bash ./scripts/development/setup.sh",
     "pull": "bash ./scripts/development/pull.sh",

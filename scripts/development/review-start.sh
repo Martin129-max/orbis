@@ -37,13 +37,14 @@ ask_pr() {
 
 web_pr=$(ask_pr "Web")
 server_pr=$(ask_pr "Server")
+mobile_pr=$(ask_pr "Mobile")
 
-if [ -z "$web_pr" ] && [ -z "$server_pr" ]; then
+if [ -z "$web_pr" ] && [ -z "$server_pr" ] && [ -z "$mobile_pr" ]; then
   echo "Nothing to review."
   exit 0
 fi
 
-for entry in "web:$web_pr" "server:$server_pr"; do
+for entry in "web:$web_pr" "server:$server_pr" "mobile:$mobile_pr"; do
   path=${entry%%:*}
   number=${entry#*:}
   [ -z "$number" ] && continue
@@ -58,7 +59,7 @@ for entry in "web:$web_pr" "server:$server_pr"; do
   echo "🔎 $path PR #$number: $title"
 done
 
-for entry in "web:$web_pr" "server:$server_pr"; do
+for entry in "web:$web_pr" "server:$server_pr" "mobile:$mobile_pr"; do
   path=${entry%%:*}
   number=${entry#*:}
   [ -z "$number" ] && continue
@@ -73,4 +74,4 @@ pnpm install
 echo "⚙️ Generating Prisma client..."
 pnpm --filter orbis-server run prisma:generate
 
-echo "🎉 Ready to review. Run pnpm run develop to start the app, and pnpm run review:end when you're done."
+echo "🎉 Ready to review. Run pnpm run develop:web or pnpm run develop:mobile to start the app, and pnpm run review:end when you're done."

@@ -16,12 +16,13 @@ When it's running:
 | Tool | Version | Why |
 | --- | --- | --- |
 | Git | any recent | Cloning the repositories |
-| Node.js | 22 LTS | Running the server and web |
+| Node.js | 22 LTS | Running the server, web, and mobile dev server |
 | pnpm | 12.4.2 | Installing dependencies and running scripts |
 | Docker | any recent | Running PostgreSQL and image storage |
-| SSH key on GitHub | | `server` and `web` are cloned over SSH |
+| SSH key on GitHub | | `server`, `web`, and `mobile` are cloned over SSH |
+| Expo Go (phone), or Xcode / Android Studio | latest | Running the mobile app (optional; see [Mobile](README.md#mobile)) |
 
-You also need access to the `PolsarCode/orbis`, `PolsarCode/orbis.server`, and `PolsarCode/orbis.web` repositories on GitHub.
+You also need access to the `PolsarCode/orbis`, `PolsarCode/orbis.server`, `PolsarCode/orbis.web`, and `PolsarCode/orbis.mobile` repositories on GitHub.
 
 ### macOS
 
@@ -134,7 +135,7 @@ Skip this if `ssh -T git@github.com` already greets you by your username.
    pnpm run setup
    ```
 
-   This clones `server` and `web`, installs dependencies, enables the git hooks, creates `server/.env` and `web/.env.local`, creates the PostgreSQL and storage containers, and generates the Prisma client. It warns about the `XXXX` values you fill in next.
+   This clones `server`, `web`, and `mobile`, installs dependencies, enables the git hooks, creates `server/.env`, `web/.env.local`, and `mobile/.env.local`, creates the PostgreSQL and storage containers, and generates the Prisma client. It warns about the `XXXX` values you fill in next.
 
 3. Fill in `server/.env`:
 
@@ -181,7 +182,7 @@ Skip this if `ssh -T git@github.com` already greets you by your username.
 7. Start everything:
 
    ```bash
-   pnpm run develop
+   pnpm run develop:web
    ```
 
    This starts the database, the image storage, the API, and the web app. Open http://localhost:3000 and log in with a test account, or create your own.
@@ -213,7 +214,7 @@ Run these from the `orbis` folder:
 | Follow its logs | `pnpm --filter orbis-server run db:logs` |
 | Delete the container and its data | `pnpm --filter orbis-server run db:remove` |
 
-`pnpm run develop` restarts the database for you, so you rarely need these day to day. The database can take a few seconds to accept connections after it starts.
+`pnpm run develop:web` and `pnpm run develop:mobile` restart the database for you, so you rarely need these day to day. The database can take a few seconds to accept connections after it starts.
 
 ### Migrations and Data
 
@@ -264,7 +265,7 @@ Run these from the `orbis` folder:
 | Create the bucket again (if you deleted it) | `pnpm --filter orbis-server run storage:bucket` |
 | Delete the container and every uploaded file | `pnpm --filter orbis-server run storage:remove` |
 
-`pnpm run develop` restarts the storage for you, along with the database.
+`pnpm run develop:web` and `pnpm run develop:mobile` restart the storage for you, along with the database.
 
 ### Production Image Storage
 
@@ -290,7 +291,7 @@ Production uses a Cloudflare R2 bucket. It's free up to 10 GB, and R2 doesn't ch
 
 | Task | Command |
 | --- | --- |
-| Start developing | `pnpm run develop` |
+| Start developing | `pnpm run develop:web` (web) or `pnpm run develop:mobile` (mobile) |
 | Pull the latest changes, install dependencies, reset/migrate/seed the local database, and check environment values | `pnpm run pull` |
 | Apply new database migrations while preserving existing data | `pnpm --filter orbis-server exec prisma migrate deploy` |
 | Stop the database | `pnpm --filter orbis-server run db:stop` |
@@ -307,7 +308,7 @@ See [README.md](README.md) for releasing and the other scripts, and [Database](#
 
 **`Bind for 0.0.0.0:5434 failed: port is already allocated`, or port 3000/4000 is in use.** Another process is using the port. Stop it, or find it with `lsof -i :5434` (macOS/Ubuntu/WSL). The same applies to the storage ports 9100 and 9101.
 
-**`pnpm run develop` fails with `No such container: orbis_server_storage`.** Your setup predates image storage. Add the storage lines (`AWS_*`, `BUCKET_NAME`, `STORAGE_PUBLIC_URL`) from `server/example.env` to `server/.env`, then run `pnpm --filter orbis-server run storage:setup`.
+**`pnpm run develop:web` fails with `No such container: orbis_server_storage`.** Your setup predates image storage. Add the storage lines (`AWS_*`, `BUCKET_NAME`, `STORAGE_PUBLIC_URL`) from `server/example.env` to `server/.env`, then run `pnpm --filter orbis-server run storage:setup`.
 
 **`/usr/bin/env: 'bash\r': No such file or directory` on Windows.** The scripts were checked out with Windows line endings. Run `git config --global core.autocrlf input`, delete the project folder, and clone again inside WSL.
 
