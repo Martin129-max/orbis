@@ -45,8 +45,23 @@ docker exec orbis_server_db pg_isready -U postgres >/dev/null
 echo "⚙️ Generating the Prisma client..."
 pnpm --filter orbis-server run prisma:generate
 
-echo "🧱 Resetting the local database, reapplying migrations, and seeding..."
-pnpm --filter orbis-server run prisma:reset
+echo "🧱 Resetting the local database and reapplying migrations..."
+(cd server && npx prisma migrate reset --force)
+
+echo "🔍 Checking that every schema change has a migration..."
+drift=0
+(cd server && npx prisma migrate diff --from-config-datasource --to-schema prisma/schema --exit-code >/dev/null) || drift=$?
+if [ "$drift" -eq 2 ]; then
+  echo "❌ The Prisma schema has changes that no migration covers." >&2
+  echo "   Whoever changed server/prisma/schema needs to run pnpm --filter orbis-server run prisma:migrate <name> and commit the migration." >&2
+  exit 1
+elif [ "$drift" -ne 0 ]; then
+  echo "❌ Couldn't compare the Prisma schema with the local database." >&2
+  exit 1
+fi
+
+echo "🌱 Seeding the local database..."
+pnpm --filter orbis-server run prisma:seed
 
 echo "🎉 Updated and reseeded. Run pnpm run develop:web or pnpm run develop:mobile to start working."
 echo ""
