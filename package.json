@@ -1,15 +1,17 @@
 {
   "name": "orbis",
-  "version": "0.44.1",
+  "version": "0.44.2",
   "private": true,
   "packageManager": "pnpm@12.4.2",
   "scripts": {
     "build": "turbo run build",
     "develop": "turbo run develop",
     "prepare": "git config core.hooksPath .githooks && git config push.recurseSubmodules no",
-    "setup": "bash ./setup.sh",
-    "pull": "bash ./pull.sh",
-    "release": "bash ./release.sh"
+    "setup": "bash ./scripts/development/setup.sh",
+    "pull": "bash ./scripts/development/pull.sh",
+    "release": "bash ./scripts/development/release.sh",
+    "review:start": "bash ./scripts/development/review-start.sh",
+    "review:end": "bash ./scripts/development/review-end.sh"
   },
   "devDependencies": {
     "turbo": "2.11.7"

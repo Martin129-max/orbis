@@ -2,7 +2,7 @@
 
 set -e
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/../.."
 
 DEFAULT_BRANCH="main"
 DB_CONTAINER="orbis_server_db"

@@ -76,7 +76,7 @@ You also need access to the `PolsarCode/orbis`, `PolsarCode/orbis.server`, and `
 
 ### Windows
 
-The project's scripts (`setup.sh`, the database script, `release.sh`, and the git hooks) are Bash scripts, so run Orbis inside **WSL 2** with Ubuntu rather than directly in PowerShell or Command Prompt.
+The project's scripts (the ones in `scripts/development`, the database script, and the git hooks) are Bash scripts, so run Orbis inside **WSL 2** with Ubuntu rather than directly in PowerShell or Command Prompt.
 
 1. In PowerShell **as Administrator**, install WSL with Ubuntu, then restart your computer:
 

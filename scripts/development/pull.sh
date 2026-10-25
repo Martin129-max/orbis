@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/../.."
 
 trap 'pull_status=$?; node ./scripts/check-env.mjs; exit "$pull_status"' EXIT
 

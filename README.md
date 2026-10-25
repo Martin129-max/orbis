@@ -37,6 +37,25 @@ This pulls the latest changes, clones `server` and `web` over SSH (the URLs in `
 | `pnpm run pull` | Pull this repository and the latest `main` of `server`/`web`, install dependencies, reset the local database, reapply migrations, and seed |
 | `pnpm run develop` | Start the database, server, and web in development mode |
 | `pnpm run build` | Build the server and web |
+| `pnpm run review:start` | Ask for a `web` and a `server` PR number and check them out for review |
+| `pnpm run review:end` | Switch `web` and `server` back to `main` |
+
+## Reviewing Pull Requests
+```bash
+pnpm run review:start
+```
+
+This first installs the [GitHub CLI](https://cli.github.com) (with Homebrew, apt, or winget) if it's missing and runs `gh auth login` if you're not logged in. It then asks for the `web` PR number and then the `server` PR number (leave one empty to skip it), shows each PR's title, checks each PR out on a local `pr/<number>` branch with `gh pr checkout`, installs dependencies, and regenerates the Prisma client. Rerunning it with the same number updates the branch to the PR's latest commit. It stops without changing anything if a PR doesn't exist or a submodule you entered a number for has uncommitted changes.
+
+When you're done:
+
+```bash
+pnpm run review:end
+```
+
+This switches `web` and `server` back to `main`, installs dependencies, and regenerates the Prisma client. It stops if either submodule has uncommitted changes.
+
+Neither script applies or reverts database migrations. If a `server` PR adds migrations, apply them with `pnpm --filter orbis-server exec prisma migrate deploy`, and run `pnpm run pull` afterwards to reset the database back to `main`.
 
 ## Releasing
 Commit your changes inside `server` and/or `web` first, then run from this repository (changes in this repository don't need to be committed):
