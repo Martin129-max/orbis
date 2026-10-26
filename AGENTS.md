@@ -8,3 +8,13 @@ Read `docs/README.md` inside that installed package first, then read the relevan
 
 This block is written and re-added by `turbo` before repository-scoped commands when an AI agent is detected. In the Turborepo source repository, its template is defined in `crates/turborepo-cli/src/cli/agent_guidance.rs`. Removing the managed block while updates are enabled means a later qualifying invocation will add it again. Set `"agentGuidance": false` in the root `turbo.json` or `turbo.jsonc` to opt out; this does not remove an existing block. Keep the block committed with your work to avoid an uncommitted change on the next agent invocation.
 <!-- END:turborepo-agent-rules -->
+
+# Agent Instructions
+
+## Skills
+
+`server`, `web`, and `mobile` each have their own `AGENTS.md` and skills in `<app>/.agents/skills/`. Follow the `AGENTS.md` of the app you're working in.
+
+The `changelog` skill (`.agents/skills/changelog/SKILL.md`) belongs to this folder: it writes the user-facing changelog in `web/changelog/` from the history of all four repositories. `pnpm run release` runs it through `scripts/development/changelog.mjs`, so use it directly only when asked to write the changelog. It's linked as `.claude/skills/changelog` for Claude Code.
+
+Every app skill is also linked into `.agents/skills/` here, so agents started from this folder can find them. When you add or rename a skill in an app, add or update its link here too, for example `ln -s ../../web/.agents/skills/<name> .agents/skills/<name>`. Keep skill names unique across the apps.

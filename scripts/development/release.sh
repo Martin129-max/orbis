@@ -17,40 +17,47 @@ branch=$(git branch --show-current)
 [ -n "$branch" ] || fail "This repository is not on a branch."
 
 submodules=$(git config --file .gitmodules --get-regexp '\.path$' | awk '{print $2}')
-changed=""
-subjects=""
-body=""
 
-for path in $submodules; do
-  if [ -n "$(git -C "$path" status --porcelain)" ]; then
-    fail "$path has uncommitted changes. Commit them inside $path first."
+collect() {
+  changed=""
+  subjects=""
+  body=""
+
+  for path in $submodules; do
+    if [ -n "$(git -C "$path" status --porcelain)" ]; then
+      fail "$path has uncommitted changes. Commit them inside $path first."
+    fi
+
+    recorded=$(git rev-parse -q --verify "HEAD:$path" || true)
+    current=$(git -C "$path" rev-parse HEAD)
+    [ "$recorded" = "$current" ] && continue
+
+    [ -n "$(git -C "$path" branch --show-current)" ] || fail "$path is not on a branch."
+    if [ -n "$recorded" ]; then
+      git -C "$path" merge-base --is-ancestor "$recorded" "$current" ||
+        fail "$path is not ahead of the commit recorded here."
+      range="$recorded..$current"
+    else
+      range="$current"
+    fi
+
+    commits=$(git -C "$path" log --reverse --no-merges --format=%s "$range")
+    changed="$changed $path"
+    subjects="$subjects$commits"$'\n'
+    body="$body$(label "$path"):"$'\n'"$(printf '%s\n' "$commits" | sed 's/^/- /')"$'\n\n'
+  done
+
+  files=$(git status --porcelain --ignore-submodules=all | cut -c4-)
+  if [ -n "$files" ]; then
+    body="${body}Orbis:"$'\n'"$(printf '%s\n' "$files" | sed 's/^/- /')"$'\n'
   fi
+}
 
-  recorded=$(git rev-parse -q --verify "HEAD:$path" || true)
-  current=$(git -C "$path" rev-parse HEAD)
-  [ "$recorded" = "$current" ] && continue
-
-  [ -n "$(git -C "$path" branch --show-current)" ] || fail "$path is not on a branch."
-  if [ -n "$recorded" ]; then
-    git -C "$path" merge-base --is-ancestor "$recorded" "$current" ||
-      fail "$path is not ahead of the commit recorded here."
-    range="$recorded..$current"
-  else
-    range="$current"
-  fi
-
-  commits=$(git -C "$path" log --reverse --no-merges --format=%s "$range")
-  changed="$changed $path"
-  subjects="$subjects$commits"$'\n'
-  body="$body$(label "$path"):"$'\n'"$(printf '%s\n' "$commits" | sed 's/^/- /')"$'\n\n'
-done
-
-files=$(git status --porcelain --ignore-submodules=all | cut -c4-)
-if [ -n "$files" ]; then
-  body="${body}Orbis:"$'\n'"$(printf '%s\n' "$files" | sed 's/^/- /')"$'\n'
-fi
-
+collect
 [ -n "$changed" ] || [ -n "$files" ] || fail "Nothing to release: nothing changed here, in server, in web, or in mobile."
+
+node scripts/development/changelog.mjs || fail "The changelog step stopped the release."
+collect
 
 if printf '%s' "$subjects" | grep -qE '^(💥|:boom:)'; then
   bump=major
