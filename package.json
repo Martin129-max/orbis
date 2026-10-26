@@ -1,6 +1,6 @@
 {
   "name": "orbis",
-  "version": "0.58.2",
+  "version": "0.59.0",
   "private": true,
   "packageManager": "pnpm@12.4.2",
   "scripts": {
