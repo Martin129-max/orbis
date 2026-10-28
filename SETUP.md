@@ -10,6 +10,7 @@ When it's running:
 | API | http://localhost:4000 |
 | PostgreSQL (Docker) | `localhost:5434` |
 | Image storage (Docker) | http://localhost:9100 (console at http://localhost:9101/rustfs/console/) |
+| Email inbox (Docker) | http://localhost:8025 |
 
 ## Prerequisites
 
@@ -18,7 +19,7 @@ When it's running:
 | Git | any recent | Cloning the repositories |
 | Node.js | 22 LTS | Running the server, web, and mobile dev server |
 | pnpm | 12.4.2 | Installing dependencies and running scripts |
-| Docker | any recent | Running PostgreSQL and image storage |
+| Docker | any recent | Running PostgreSQL, image storage, and the email inbox |
 | SSH key on GitHub | | `server`, `web`, and `mobile` are cloned over SSH |
 | Expo Go (phone), or Xcode / Android Studio | latest | Running the mobile app (optional; see [Mobile](README.md#mobile)) |
 
@@ -135,7 +136,7 @@ Skip this if `ssh -T git@github.com` already greets you by your username.
    pnpm run setup
    ```
 
-   This clones `server`, `web`, and `mobile`, installs dependencies, enables the git hooks, creates `server/.env`, `web/.env.local`, and `mobile/.env.local`, creates the PostgreSQL and storage containers, and generates the Prisma client. It warns about the `XXXX` values you fill in next.
+   This clones `server`, `web`, and `mobile`, installs dependencies, enables the git hooks, creates `server/.env`, `web/.env.local`, and `mobile/.env.local`, creates the PostgreSQL, storage, and email inbox containers, and generates the Prisma client. It warns about the `XXXX` values you fill in next.
 
 3. Fill in `server/.env`:
 
@@ -144,7 +145,7 @@ Skip this if `ssh -T git@github.com` already greets you by your username.
    DATABASE_URL=postgresql://postgres:YourStrongPass123@localhost:5434/orbis_server_db
    ```
 
-   The storage values (`AWS_*`, `BUCKET_NAME`, `STORAGE_PUBLIC_URL`) already match the local storage container, so leave them as they are.
+   The storage values (`AWS_*`, `BUCKET_NAME`, `STORAGE_PUBLIC_URL`) already match the local storage container, and `MAILPIT_URL` already matches the local email inbox, so leave them as they are.
 
    Generate a `JWT_SECRET` with:
 
@@ -185,7 +186,7 @@ Skip this if `ssh -T git@github.com` already greets you by your username.
    pnpm run develop:web
    ```
 
-   This starts the database, the image storage, the API, and the web app. Open http://localhost:3000 and log in with a test account, or create your own.
+   This starts the database, the image storage, the email inbox, the API, and the web app. Open http://localhost:3000 and log in with a test account, or create your own.
 
 ## Database
 
@@ -286,6 +287,49 @@ Production uses a Cloudflare R2 bucket. It's free up to 10 GB, and R2 doesn't ch
    ```
 
    `STORAGE_PUBLIC_URL` is where browsers load images from, with no trailing slash. Don't run `storage:bucket` against R2; the bucket and its public access are set up in the dashboard.
+
+## Email
+
+Orbis sends emails, like the link to confirm an email address after signing up. Locally they go to [Mailpit](https://mailpit.axllent.org), an inbox in a Docker container that `pnpm run setup` creates for you, so nothing reaches a real inbox. Open http://localhost:8025 to read them. In production they're sent through [Resend](https://resend.com) (see [Production Email](#production-email)).
+
+| Setting | Value |
+| --- | --- |
+| Container | `orbis_server_email` |
+| Image | `axllent/mailpit:v1.31.6` |
+| Inbox and API | http://localhost:8025 |
+
+Run these from the `orbis` folder:
+
+| Task | Command |
+| --- | --- |
+| Create the container (first time only) | `pnpm --filter orbis-server run email:setup` |
+| Start | `pnpm --filter orbis-server run email:start` |
+| Stop | `pnpm --filter orbis-server run email:stop` |
+| Restart | `pnpm --filter orbis-server run email:restart` |
+| Check if it's running | `pnpm --filter orbis-server run email:status` |
+| Follow its logs | `pnpm --filter orbis-server run email:logs` |
+| Delete the container and every email in it | `pnpm --filter orbis-server run email:remove` |
+
+`pnpm run develop:web` and `pnpm run develop:mobile` restart the inbox for you, along with the database and storage, and create it first if it doesn't exist yet.
+
+The server picks where emails go from `server/.env`: through Resend when `RESEND_API_KEY` is set, otherwise to Mailpit at `MAILPIT_URL`. With neither, it prints each email, link included, in its terminal.
+
+### Production Email
+
+Production sends through Resend. Its free plan covers small apps.
+
+1. Create an account at [resend.com](https://resend.com). Under **Domains**, add your domain, add the DNS records it shows at your DNS provider, and wait until it shows **Verified**.
+2. Under **API Keys**, create a key with sending access, limited to that domain.
+3. Set these in the production server's environment:
+
+   ```bash
+   fly secrets set RESEND_API_KEY=<api key> EMAIL_FROM="Orbis <hello@yourdomain.com>" -a orbis-server
+   ```
+
+   `EMAIL_FROM` must use exactly the domain you verified; a subdomain counts as a different domain. The links in emails use `WEB_URL`, so it must be the site's address.
+4. Check **Emails** in Resend to see whether messages were delivered.
+
+To try Resend locally instead of Mailpit, set `RESEND_API_KEY` in `server/.env`. Until your domain is verified, Resend only delivers mail from `onboarding@resend.dev` to the address you signed up to Resend with.
 
 ## Day-to-Day
 
